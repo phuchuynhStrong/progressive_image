@@ -9,6 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:progressive_image/src/progress.dart';
 
+import 'src/progress.dart';
+import 'src/progress.dart';
+
 /// A image that gracefully fades from a blurred [thumbnail] to the target [image].
 /// [placeholder] is displayed initially until the [thumbnail] loads.
 ///
@@ -81,6 +84,7 @@ class ProgressiveImage extends StatefulWidget {
     this.matchTextDirection = false,
     this.excludeFromSemantics = false,
     this.imageSemanticLabel,
+    this.imageBuilder,
   })  : assert(placeholder != null),
         assert(thumbnail != null),
         assert(image != null),
@@ -147,6 +151,7 @@ class ProgressiveImage extends StatefulWidget {
     this.matchTextDirection = false,
     this.excludeFromSemantics = false,
     this.imageSemanticLabel,
+    this.imageBuilder,
   })  : assert(placeholder != null),
         assert(thumbnail != null),
         assert(image != null),
@@ -210,6 +215,7 @@ class ProgressiveImage extends StatefulWidget {
     this.matchTextDirection = false,
     this.excludeFromSemantics = false,
     this.imageSemanticLabel,
+    this.imageBuilder,
   })  : assert(placeholder != null),
         assert(thumbnail != null),
         assert(image != null),
@@ -313,6 +319,11 @@ class ProgressiveImage extends StatefulWidget {
   /// This description will be used both while the `placeholder` is shown and
   /// once the image has loaded.
   final String imageSemanticLabel;
+
+  /// Optional builder to further customize the display of the image.
+  /// Inspired from CachedNetworkImage
+  final ProgressiveImageWidgetBuilder imageBuilder;
+
   @override
   _ProgressiveImageState createState() => _ProgressiveImageState();
 }
@@ -375,8 +386,13 @@ class _ProgressiveImageState extends State<ProgressiveImage> {
   }
 
   Image _image(
-      {@required ImageProvider image, ImageFrameBuilder frameBuilder}) {
+      {@required ImageProvider image,
+      ImageFrameBuilder frameBuilder,
+      ProgressiveImageWidgetBuilder imageBuilder}) {
     assert(image != null);
+    if (imageBuilder != null) {
+      return imageBuilder(context, image);
+    }
     return Image(
       image: image,
       frameBuilder: frameBuilder,
@@ -442,7 +458,7 @@ class _ProgressiveImageState extends State<ProgressiveImage> {
           duration: widget.fadeDuration,
           child: _status == Progress.Loading
               ? SizedBox(height: 0, width: 0)
-              : _image(image: widget.image),
+              : _image(image: widget.image, imageBuilder: widget.imageBuilder),
         )
       ],
     );
