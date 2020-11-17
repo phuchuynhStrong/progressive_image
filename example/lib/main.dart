@@ -24,7 +24,32 @@ class ProgressiveImageExample extends StatelessWidget {
   final Widget example1 = ProgressiveImage(
     placeholder: AssetImage('assets/images/placeholder.jpg'),
     thumbnail: NetworkImage('https://i.imgur.com/eOQL4jg.jpg'), // 64x36
-    image: NetworkImage('https://i.imgur.com/mDQ3Qbi.jpg'), // 3842x2160
+    image: NetworkImage('https://i.imgur.com/mDQ3Qbi.jpg'), // 3842x2
+    imageBuilder: (context, provider) {
+      return Container(
+        width: 500,
+        height: 300,
+        decoration: BoxDecoration(
+          image: DecorationImage(image: provider, fit: BoxFit.cover),
+          borderRadius:
+              BorderRadius.circular(10.0),
+        ),
+        foregroundDecoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black38,
+              Colors.black87,
+            ],
+            stops: [0.0, 0.9, 1.0],
+          ),
+          borderRadius:
+              BorderRadius.circular(10.0),
+        ),
+      );
+    },
     height: 300,
     width: 500,
     fit: BoxFit.cover,

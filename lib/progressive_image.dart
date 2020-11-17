@@ -71,11 +71,11 @@ class ProgressiveImage extends StatefulWidget {
   /// ```
   ProgressiveImage({
     Key key,
-    @required this.placeholder,
     @required this.thumbnail,
     @required this.image,
-    @required this.width,
-    @required this.height,
+    this.placeholder,
+    this.width,
+    this.height,
     this.fit = BoxFit.fill,
     this.blur = 20,
     this.fadeDuration = const Duration(milliseconds: 500),
@@ -85,11 +85,9 @@ class ProgressiveImage extends StatefulWidget {
     this.excludeFromSemantics = false,
     this.imageSemanticLabel,
     this.imageBuilder,
-  })  : assert(placeholder != null),
-        assert(thumbnail != null),
+    this.blurContainerRadius = 0.0,
+  })  : assert(thumbnail != null),
         assert(image != null),
-        assert(width != null),
-        assert(height != null),
         assert(fadeDuration != null),
         assert(alignment != null),
         assert(repeat != null),
@@ -138,8 +136,8 @@ class ProgressiveImage extends StatefulWidget {
     @required Uint8List placeholder,
     @required String thumbnail,
     @required String image,
-    @required this.width,
-    @required this.height,
+    this.width,
+    this.height,
     double placeholderScale = 1.0,
     double thumbnailScale = 1.0,
     double imageScale = 1.0,
@@ -152,6 +150,7 @@ class ProgressiveImage extends StatefulWidget {
     this.excludeFromSemantics = false,
     this.imageSemanticLabel,
     this.imageBuilder,
+    this.blurContainerRadius = 0.0,
   })  : assert(placeholder != null),
         assert(thumbnail != null),
         assert(image != null),
@@ -201,8 +200,8 @@ class ProgressiveImage extends StatefulWidget {
     @required String placeholder,
     @required String thumbnail,
     @required String image,
-    @required this.width,
-    @required this.height,
+    this.width,
+    this.height,
     AssetBundle bundle,
     double placeholderScale,
     double thumbnailScale = 1.0,
@@ -216,11 +215,10 @@ class ProgressiveImage extends StatefulWidget {
     this.excludeFromSemantics = false,
     this.imageSemanticLabel,
     this.imageBuilder,
+    this.blurContainerRadius = 0.0,
   })  : assert(placeholder != null),
         assert(thumbnail != null),
         assert(image != null),
-        assert(height != null),
-        assert(width != null),
         placeholder = placeholderScale != null
             ? ExactAssetImage(placeholder,
                 bundle: bundle, scale: placeholderScale)
@@ -324,6 +322,9 @@ class ProgressiveImage extends StatefulWidget {
   /// Inspired from CachedNetworkImage
   final ProgressiveImageWidgetBuilder imageBuilder;
 
+  /// Blur container's border radius
+  final double blurContainerRadius;
+
   @override
   _ProgressiveImageState createState() => _ProgressiveImageState();
 }
@@ -385,7 +386,7 @@ class _ProgressiveImageState extends State<ProgressiveImage> {
         .addListener(_thumbnailListener);
   }
 
-  Image _image(
+  Widget _image(
       {@required ImageProvider image,
       ImageFrameBuilder frameBuilder,
       ProgressiveImageWidgetBuilder imageBuilder}) {
@@ -414,14 +415,17 @@ class _ProgressiveImageState extends State<ProgressiveImage> {
       alignment: AlignmentDirectional.center,
       textDirection: TextDirection.ltr,
       children: <Widget>[
-        AnimatedOpacity(
-            duration: widget.fadeDuration,
-            // Fade out placeholder only after the thumbnail fades in completely
-            opacity: _status == Progress.Loading ||
-                    (_status == Progress.ThumbnailLoaded && _placeholderDelay)
-                ? 1.0
-                : 0.0,
-            child: _image(image: widget.placeholder)),
+        if (widget.placeholder != null)
+          AnimatedOpacity(
+              duration: widget.fadeDuration,
+              // Fade out placeholder only after the thumbnail fades in completely
+              opacity: _status == Progress.Loading ||
+                      (_status == Progress.ThumbnailLoaded && _placeholderDelay)
+                  ? 1.0
+                  : 0.0,
+              child: _image(
+                  image: widget.placeholder,
+                  imageBuilder: widget.imageBuilder)),
         AnimatedOpacity(
           // Fade out thumbnail only after the target image fades in completely
           opacity: _status == Progress.ThumbnailLoaded ||
@@ -429,26 +433,30 @@ class _ProgressiveImageState extends State<ProgressiveImage> {
               ? 1.0
               : 0.0,
           duration: widget.fadeDuration,
-          child: _image(image: widget.thumbnail),
+          child: _image(
+              image: widget.thumbnail, imageBuilder: widget.imageBuilder),
         ),
-        Opacity(
-          // Fade out blur effect only after the target image fades in completely
-          opacity: _status == Progress.ThumbnailLoaded ||
-                  (_status == Progress.TargetLoaded && _thumbnailDelay)
-              ? 1.0
-              : 0.0,
-          child: ClipRect(
-            child: BackdropFilter(
-              filter:
-                  ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-              child: Container(
-                // height: apparentHeight(),
-                // width: apparentWidth(),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.blurContainerRadius),
+          ),
+          child: Opacity(
+            // Fade out blur effect only after the target image fades in completely
+            opacity: _status == Progress.ThumbnailLoaded ||
+                    (_status == Progress.TargetLoaded && _thumbnailDelay)
+                ? 1.0
+                : 0.0,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(widget.blurContainerRadius),
+              child: BackdropFilter(
+                filter:
+                    ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
                 child: Opacity(
                   opacity: 0.0,
-                  child: _image(image: widget.thumbnail),
+                  child: _image(
+                      image: widget.thumbnail,
+                      imageBuilder: widget.imageBuilder),
                 ),
-                color: Colors.black.withOpacity(0),
               ),
             ),
           ),
